@@ -1,0 +1,33 @@
+{
+  "name": "crawler-ts-fetch",
+  "version": "1.0.0",
+  "author": {
+    "name": "Gillis Van Ginderacter",
+    "email": "supergillis@gmail.com",
+    "url": "https://github.com/supergillis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supergillis/crawler-ts-fetch.git"
+  },
+  "license": "GPLv3",
+  "scripts": {
+    "build": "pnpx tsc -p tsconfig.json && pnpx tsc -p tsconfig.esm.json",
+    "prepublishOnly": "pnpm run build"
+  },
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "dependencies": {
+    "crawler-ts": "^1.0.0",
+    "node-fetch": "^2.6.0"
+  },
+  "peerDependencies": {
+    "crawler-ts": "^1.0.0",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.7",
+    "typescript": "^4.1.3"
+  }
+}
