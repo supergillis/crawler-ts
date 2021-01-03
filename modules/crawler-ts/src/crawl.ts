@@ -1,19 +1,19 @@
-import { allowHttpOk, allowHtml, chain, IResponse, IUrl } from "./filter";
+import { allowHttpOk, allowHtml, chain, IResponse } from "./filter";
 
-export interface Config<Res extends IResponse, Parsed> {
-  requester(url: IUrl): Promise<Res>;
-  parser(url: IUrl, res: Res): Promise<Parsed>;
-  follower(parsed: Parsed): AsyncGenerator<IUrl>;
-  shouldParse(url: IUrl, res: Res): boolean;
-  shouldQueue(url: IUrl): boolean;
-  shouldYield(parsed: Parsed): boolean;
+export interface Config<Response extends IResponse, Result> {
+  requester(url: URL): Promise<Response>;
+  parser(url: URL, response: Response): Promise<Result>;
+  follower(result: Result): AsyncGenerator<URL>;
+  shouldParse(url: URL, response: Response): boolean;
+  shouldQueue(url: URL): boolean;
+  shouldYield(result: Result): boolean;
 }
 
 export const defaultParseFilter = chain(allowHttpOk, allowHtml);
 
-export function crawl<Res extends IResponse, Parsed>(
-  config: Config<Res, Parsed>
-): (url: IUrl) => AsyncGenerator<Parsed> {
+export function crawl<Response extends IResponse, Result>(
+  config: Config<Response, Result>
+): (url: URL) => AsyncGenerator<Result> {
   const {
     requester,
     parser,
@@ -23,20 +23,20 @@ export function crawl<Res extends IResponse, Parsed>(
     shouldYield,
   } = config;
 
-  return async function* gen(url: IUrl): AsyncGenerator<Parsed> {
+  return async function* gen(url: URL): AsyncGenerator<Result> {
     try {
       console.debug(`Requesting ${url.href}`);
       const response = await requester(url);
       if (shouldParse(url, response)) {
         console.debug(`Parsing ${url.href}`);
-        const parsed = await parser(url, response);
+        const result = await parser(url, response);
 
-        if (shouldYield(parsed)) {
+        if (shouldYield(result)) {
           console.debug(`Yielding ${url.href}`);
-          yield parsed;
+          yield result;
         }
 
-        for await (const link of follower(parsed)) {
+        for await (const link of follower(result)) {
           try {
             if (shouldQueue(link)) {
               console.debug(`Queueing ${link.href}`);

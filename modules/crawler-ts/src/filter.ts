@@ -1,10 +1,3 @@
-export interface IUrl {
-  protocol: string;
-  host: string;
-  pathname: string;
-  href: string;
-}
-
 export type IHeaders = { [key: string]: string };
 
 export interface IResponse {
@@ -13,8 +6,8 @@ export interface IResponse {
   body: string;
 }
 
-export type UrlFilter = (url: IUrl) => boolean;
-export type ResponseFilter = (url: IUrl, response: IResponse) => boolean;
+export type UrlFilter = (url: URL) => boolean;
+export type ResponseFilter = (url: URL, response: IResponse) => boolean;
 
 export function chain<A>(...fns: Array<(a: A) => boolean>): (a: A) => boolean;
 export function chain<A, B>(
@@ -32,12 +25,12 @@ export function chain(...fns: Array<Function>): () => boolean {
 }
 
 export function regex(regex: RegExp): UrlFilter {
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     return regex.test(url.href);
   };
 }
 
-export function allowHttpOk(url: IUrl, response: IResponse): boolean {
+export function allowHttpOk(url: URL, response: IResponse): boolean {
   if (response.status !== 200) {
     console.debug(`Not allowing ${response.status}`);
     return false;
@@ -47,7 +40,7 @@ export function allowHttpOk(url: IUrl, response: IResponse): boolean {
 
 const htmlContentType = /text\/html;?.*/;
 export function allowHtml<Res extends IResponse>(
-  url: IUrl,
+  url: URL,
   response: Res
 ): boolean {
   const contentType = response.headers["content-type"];
@@ -59,7 +52,7 @@ export function allowHtml<Res extends IResponse>(
 }
 
 export function allowHosts(allowedHosts: string[]): UrlFilter {
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     if (allowedHosts.indexOf(url.host) === -1) {
       console.debug(`Host not allowed ${url.host}`);
       return false;
@@ -72,7 +65,7 @@ export function allowProtocols(allowedProtocols: string[]): UrlFilter {
   const transformedProtocols = allowedProtocols.map(
     (protocol) => `${protocol}:`
   );
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     if (transformedProtocols.indexOf(url.protocol) === -1) {
       console.debug(`Protocol not allowed ${url.protocol}`);
       return false;
@@ -82,7 +75,7 @@ export function allowProtocols(allowedProtocols: string[]): UrlFilter {
 }
 
 export function allowExtensions(allowedExtensions: string[]): UrlFilter {
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     const lastSlashIndex = Math.max(0, url.pathname.lastIndexOf("/"));
     const lastSlashPart = url.pathname.substr(lastSlashIndex);
     const lastDotIndex = lastSlashPart.lastIndexOf(".");
@@ -98,7 +91,7 @@ export function allowExtensions(allowedExtensions: string[]): UrlFilter {
 }
 
 export function allowUrls(allowUrls: RegExp[]): UrlFilter {
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     for (const allowUrl of allowUrls) {
       if (allowUrl.test(url.href)) {
         console.debug(`Allowing ${url.href}`);
@@ -110,7 +103,7 @@ export function allowUrls(allowUrls: RegExp[]): UrlFilter {
 }
 
 export function ignoreUrls(ignoredUrls: RegExp[]): UrlFilter {
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     for (const ignoredUrl of ignoredUrls) {
       if (ignoredUrl.test(url.href)) {
         console.debug(`Ignoring ${url.href}`);
@@ -122,10 +115,10 @@ export function ignoreUrls(ignoredUrls: RegExp[]): UrlFilter {
 }
 
 export function ignoreDoubles(
-  keyFn: (url: IUrl) => string | null | undefined = (url) => url.href
+  keyFn: (url: URL) => string | null | undefined = (url) => url.href
 ): UrlFilter {
   const seen: string[] = [];
-  return (url: IUrl): boolean => {
+  return (url: URL): boolean => {
     const key = keyFn(url);
     if (!key || seen.includes(key)) {
       console.debug(`Skipping visited "${url.href}"`);
@@ -138,7 +131,7 @@ export function ignoreDoubles(
 
 export function cache(fn: UrlFilter): UrlFilter {
   const shouldFollowCache: { [key: string]: boolean } = {};
-  return function cachedShouldFollow(url: IUrl): boolean {
+  return function cachedShouldFollow(url: URL): boolean {
     if (shouldFollowCache.hasOwnProperty(url.href)) {
       return shouldFollowCache[url.href];
     }
