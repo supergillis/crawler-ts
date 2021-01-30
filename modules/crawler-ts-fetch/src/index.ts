@@ -1,4 +1,4 @@
-import fetch, { Response } from "node-fetch";
+import fetch, { Response } from 'node-fetch';
 
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));

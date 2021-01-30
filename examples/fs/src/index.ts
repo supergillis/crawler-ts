@@ -1,12 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
-import {
-  crawl,
-  chain,
-  allowExtensions,
-  ignoreDoubles,
-  ignoreRegex,
-} from "crawler-ts/src";
+import * as fs from 'fs';
+import * as path from 'path';
+import { crawl, chain, allowExtensions, ignoreDoubles, ignoreRegex } from 'crawler-ts/src';
 
 interface FsEntry {
   stat: fs.Stats;
@@ -32,7 +26,7 @@ const fileCrawler = () =>
     // No need for parsing, just return the response as result
     parser: (_url, response) => response,
     // Only yield paths with extension ".ts" that are files
-    shouldYield: chain(entryIsFile, entryIgnoreExtensions(["ts"])),
+    shouldYield: chain(entryIsFile, entryIgnoreExtensions(['ts'])),
     // Follow files in a directory
     follower: fileFollower(),
     // Ignore doubles

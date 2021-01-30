@@ -1,9 +1,9 @@
-import select from "css-select";
-import { Parser } from "htmlparser2";
-import { DomHandler, Node, Element } from "domhandler";
-import { crawl as crawlBase, Config as ConfigBase } from "crawler-ts";
-import { createRequester as createFetchRequester } from "crawler-ts-fetch";
-import { Response } from "./filter";
+import select from 'css-select';
+import { Parser } from 'htmlparser2';
+import { DomHandler, Node, Element } from 'domhandler';
+import { crawl as crawlBase, Config as ConfigBase } from 'crawler-ts';
+import { createRequester as createFetchRequester } from 'crawler-ts-fetch';
+import { Response } from './filter';
 
 export type Root = Node[];
 
@@ -25,10 +25,7 @@ export function createRequester(delayMilliseconds?: number) {
   };
 }
 
-export async function parser<R extends Response>(
-  url: URL,
-  response: R
-): Promise<Result> {
+export async function parser<R extends Response>(url: URL, response: R): Promise<Result> {
   return new Promise<Result>((resolve, reject) => {
     const handler = new DomHandler((e, root) => {
       if (e) {
@@ -49,23 +46,20 @@ export async function parser<R extends Response>(
 
 export async function* follower(result: Result): AsyncGenerator<URL> {
   const links = select
-    .selectAll("a", result.root)
+    .selectAll('a', result.root)
     .map((node) => node as Element)
-    .map((node) => node.attribs["href"])
+    .map((node) => node.attribs['href'])
     .filter((link) => !!link);
   for (const link of links) {
     const url = new URL(link, result.url.href);
-    url.username = "";
-    url.password = "";
-    url.hash = "";
+    url.username = '';
+    url.password = '';
+    url.hash = '';
     yield url;
   }
 }
 
-export type Config = Omit<
-  ConfigBase<URL, Response, Result>,
-  "follower" | "parser" | "requester"
->;
+export type Config = Omit<ConfigBase<URL, Response, Result>, 'follower' | 'parser' | 'requester'>;
 
 export function crawl(config: Config) {
   return crawlBase({

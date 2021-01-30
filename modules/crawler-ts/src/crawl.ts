@@ -44,17 +44,9 @@ export interface Config<Location, Response, Result> {
 }
 
 export function crawl<Location, Response, Result>(
-  config: Config<Location, Response, Result>
+  config: Config<Location, Response, Result>,
 ): (start: Location) => AsyncGenerator<Result> {
-  const {
-    requester,
-    shouldParse,
-    parser,
-    shouldYield,
-    follower,
-    shouldQueue,
-    logger,
-  } = config;
+  const { requester, shouldParse, parser, shouldYield, follower, shouldQueue, logger } = config;
 
   return async function* gen(loc: Location): AsyncGenerator<Result> {
     try {

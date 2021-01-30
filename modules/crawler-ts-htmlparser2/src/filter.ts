@@ -1,11 +1,4 @@
-import {
-  Logger,
-  Filter,
-  allowExtensions,
-  allowRegex,
-  ignoreDoubles,
-  ignoreRegex,
-} from "crawler-ts";
+import { Logger, Filter, allowExtensions, allowRegex, ignoreDoubles, ignoreRegex } from 'crawler-ts';
 
 export interface Response {
   status: number;
@@ -36,7 +29,7 @@ const htmlContentType = /text\/html;?.*/;
 
 export function allowHtml(logger?: Logger) {
   return function <Res extends Response>(url: URL, response: Res): boolean {
-    const contentType = response.headers["content-type"];
+    const contentType = response.headers['content-type'];
     if (!contentType || !htmlContentType.test(contentType)) {
       logger?.info(`Not allowing ${contentType}`);
       return false;
@@ -55,13 +48,8 @@ export function allowHosts(allowedHosts: string[], logger?: Logger): UrlFilter {
   };
 }
 
-export function allowProtocols(
-  allowedProtocols: string[],
-  logger?: Logger
-): UrlFilter {
-  const transformedProtocols = allowedProtocols.map(
-    (protocol) => `${protocol}:`
-  );
+export function allowProtocols(allowedProtocols: string[], logger?: Logger): UrlFilter {
+  const transformedProtocols = allowedProtocols.map((protocol) => `${protocol}:`);
   return (url: URL): boolean => {
     if (transformedProtocols.indexOf(url.protocol) === -1) {
       logger?.info(`Protocol not allowed ${url.protocol}`);

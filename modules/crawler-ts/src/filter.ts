@@ -1,4 +1,4 @@
-import { Logger } from "./crawl";
+import { Logger } from './crawl';
 
 export type Filter<T> = (location: T) => boolean;
 export type ToString<T> = (location: T) => string;
@@ -6,9 +6,7 @@ export type ToString<T> = (location: T) => string;
 export const toString: ToString<any> = (value) => `${value}`;
 
 export function chain<A>(...fns: Array<(a: A) => boolean>): (a: A) => boolean;
-export function chain<A, B>(
-  ...fns: Array<(a: A, b: B) => boolean>
-): (a: A, b: B) => boolean;
+export function chain<A, B>(...fns: Array<(a: A, b: B) => boolean>): (a: A, b: B) => boolean;
 
 /**
  * Chain multiple filter functions together.
@@ -29,13 +27,13 @@ export function chain(...fns: Array<Function>): () => boolean {
  */
 export const allowExtensions = <T>(strFn: ToString<T> = toString) => (
   allowedExtensions: string[],
-  logger?: Logger
+  logger?: Logger,
 ): Filter<T> => {
   return (location: T): boolean => {
     const converted = strFn(location);
-    const lastSlashIndex = Math.max(0, converted.lastIndexOf("/"));
+    const lastSlashIndex = Math.max(0, converted.lastIndexOf('/'));
     const lastSlashPart = converted.substr(lastSlashIndex);
-    const lastDotIndex = lastSlashPart.lastIndexOf(".");
+    const lastDotIndex = lastSlashPart.lastIndexOf('.');
     if (lastDotIndex !== -1) {
       const extension = lastSlashPart.substr(lastDotIndex + 1);
       if (allowedExtensions.indexOf(extension) === -1) {
@@ -50,10 +48,7 @@ export const allowExtensions = <T>(strFn: ToString<T> = toString) => (
 /**
  * Create a filter that allows values matching the given regexes.
  */
-export const allowRegex = <T>(strFn: ToString<T> = toString) => (
-  allowUrls: RegExp[],
-  logger?: Logger
-): Filter<T> => {
+export const allowRegex = <T>(strFn: ToString<T> = toString) => (allowUrls: RegExp[], logger?: Logger): Filter<T> => {
   return (location: T): boolean => {
     for (const allowUrl of allowUrls) {
       const converted = strFn(location);
@@ -71,7 +66,7 @@ export const allowRegex = <T>(strFn: ToString<T> = toString) => (
  */
 export const ignoreRegex = <T>(strFn: ToString<T> = toString) => (
   ignoredUrls: RegExp[],
-  logger?: Logger
+  logger?: Logger,
 ): Filter<T> => {
   return (location: T): boolean => {
     for (const ignoredUrl of ignoredUrls) {
@@ -88,9 +83,7 @@ export const ignoreRegex = <T>(strFn: ToString<T> = toString) => (
 /**
  * Create a filter that ignores doubles.
  */
-export const ignoreDoubles = <T>(strFn: ToString<T> = toString) => (
-  logger?: Logger
-): Filter<T> => {
+export const ignoreDoubles = <T>(strFn: ToString<T> = toString) => (logger?: Logger): Filter<T> => {
   const seen: string[] = [];
   return (location: T): boolean => {
     const key = strFn(location);
@@ -103,9 +96,7 @@ export const ignoreDoubles = <T>(strFn: ToString<T> = toString) => (
   };
 };
 
-export const cache = <T>(strFn: ToString<T> = toString) => (
-  fn: Filter<T>
-): Filter<T> => {
+export const cache = <T>(strFn: ToString<T> = toString) => (fn: Filter<T>): Filter<T> => {
   const shouldFollowCache: { [key: string]: boolean } = {};
   return function cachedShouldFollow(location: T): boolean {
     const string = strFn(location);
