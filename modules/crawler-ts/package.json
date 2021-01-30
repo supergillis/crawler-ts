@@ -1,6 +1,6 @@
 {
   "name": "crawler-ts",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": {
     "name": "Gillis Van Ginderacter",
     "email": "supergillis@gmail.com",
@@ -13,7 +13,9 @@
   "license": "GPLv3",
   "scripts": {
     "build": "pnpx tsc -p tsconfig.json && pnpx tsc -p tsconfig.esm.json",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm run build",
+    "prepack": "cp ../../README.md .",
+    "postpack": "rm README.md"
   },
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",

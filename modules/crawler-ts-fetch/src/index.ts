@@ -1,19 +1,12 @@
-import fetch from "node-fetch";
-import type { IResponse } from "crawler-ts";
+import fetch, { Response } from "node-fetch";
 
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 export function createRequester(delayMilliseconds: number = 50) {
-  return async (url: URL): Promise<IResponse> => {
+  return async (href: string): Promise<Response> => {
     await delay(delayMilliseconds);
-    const response = await fetch(url.href);
-    const body = await response.text();
-    return {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      body,
-    };
+    return fetch(href);
   };
 }

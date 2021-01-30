@@ -1,0 +1,21 @@
+{
+  "name": "crawler-ts-example-http",
+  "version": "1.0.0",
+  "author": {
+    "name": "Gillis Van Ginderacter",
+    "email": "supergillis@gmail.com",
+    "url": "https://github.com/supergillis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supergillis/crawler-ts.git"
+  },
+  "dependencies": {
+    "crawler-ts": "workspace:*",
+    "crawler-ts-htmlparser2": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "12.x",
+    "typescript": "^4.1.3"
+  }
+}
