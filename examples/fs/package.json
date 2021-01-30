@@ -1,6 +1,7 @@
 {
   "name": "crawler-ts-example-fs",
   "version": "1.0.0",
+  "private": true,
   "author": {
     "name": "Gillis Van Ginderacter",
     "email": "supergillis@gmail.com",
