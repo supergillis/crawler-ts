@@ -2,11 +2,16 @@ import { chain, allowRegex, ignoreDoubles } from 'crawler-ts/src';
 import { crawl, allowHtml, allowProtocols } from 'crawler-ts-htmlparser2/src';
 
 async function main() {
-  // Ignore search parameters
-  const urlToStringWithoutQuery = (url: URL) => `${url.protocol}//${url.host}${url.pathname}`;
+  const nasaMarsBlogRegex = /\/mars\.nasa\.gov\/news\/([\d]+)\//;
 
-  const allowPathnameRegex = allowRegex<URL>(urlToStringWithoutQuery);
-  const ignorePathnameDoubles = ignoreDoubles<URL>(urlToStringWithoutQuery);
+  const allowUrlRegex = allowRegex<URL>((url) => url.href);
+
+  // In this case we find the ":id" piece in the URL and use it to detect duplicates
+  const ignoreMarsNewsDoubles = ignoreDoubles<URL>((url) => {
+    const match = url.pathname.match(/news\/([\d]+)\//);
+    const newsId = match?.[1];
+    return newsId ?? '';
+  });
 
   // Only parse text/html
   const shouldParse = allowHtml();
@@ -14,27 +19,23 @@ async function main() {
   // Only queue links with
   // - ignore already visited
   const shouldQueue = chain(
-    // Protocol http or https
     allowProtocols(['http', 'https']),
     // Allow news pages
-    allowPathnameRegex([/\/mars\.nasa\.gov\/news\/[\d]+\//]),
+    allowUrlRegex([nasaMarsBlogRegex]),
     // Ignore already visited
-    ignorePathnameDoubles(),
+    ignoreMarsNewsDoubles(),
   );
-
-  // Yield news pages
-  const shouldYield = allowPathnameRegex([/\/mars\.nasa\.gov\/news\/[\d]+\//]);
 
   const crawler = crawl({
     shouldParse,
     shouldQueue,
-    shouldYield: (result) => shouldYield(result.url),
+    shouldYield: () => true,
   });
 
   const root = new URL('https://mars.nasa.gov/news');
-  for await (const result of crawler(root)) {
+  for await (const { location, parsed } of crawler(root)) {
     // Do something with the crawled result
-    console.log(result.url.href);
+    console.log(location.href, parsed.length);
   }
 }
 

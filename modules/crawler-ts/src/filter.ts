@@ -1,6 +1,6 @@
 import { Logger } from './crawl';
 
-export type Filter<T> = (location: T) => boolean;
+export type Filter<T> = ({ location }: { location: T }) => boolean;
 export type ToString<T> = (location: T) => string;
 
 export const toString: ToString<any> = (value) => `${value}`;
@@ -29,7 +29,7 @@ export const allowExtensions = <T>(strFn: ToString<T> = toString) => (
   allowedExtensions: string[],
   logger?: Logger,
 ): Filter<T> => {
-  return (location: T): boolean => {
+  return ({ location }): boolean => {
     const converted = strFn(location);
     const lastSlashIndex = Math.max(0, converted.lastIndexOf('/'));
     const lastSlashPart = converted.substr(lastSlashIndex);
@@ -49,7 +49,7 @@ export const allowExtensions = <T>(strFn: ToString<T> = toString) => (
  * Create a filter that allows values matching the given regexes.
  */
 export const allowRegex = <T>(strFn: ToString<T> = toString) => (allowUrls: RegExp[], logger?: Logger): Filter<T> => {
-  return (location: T): boolean => {
+  return ({ location }: { location: T }): boolean => {
     for (const allowUrl of allowUrls) {
       const converted = strFn(location);
       if (allowUrl.test(converted)) {
@@ -68,7 +68,7 @@ export const ignoreRegex = <T>(strFn: ToString<T> = toString) => (
   ignoredUrls: RegExp[],
   logger?: Logger,
 ): Filter<T> => {
-  return (location: T): boolean => {
+  return ({ location }: { location: T }): boolean => {
     for (const ignoredUrl of ignoredUrls) {
       const converted = strFn(location);
       if (ignoredUrl.test(converted)) {
@@ -85,7 +85,7 @@ export const ignoreRegex = <T>(strFn: ToString<T> = toString) => (
  */
 export const ignoreDoubles = <T>(strFn: ToString<T> = toString) => (logger?: Logger): Filter<T> => {
   const seen: string[] = [];
-  return (location: T): boolean => {
+  return ({ location }: { location: T }): boolean => {
     const key = strFn(location);
     if (!key || seen.includes(key)) {
       logger?.info(`Skipping visited "${location}"`);
@@ -98,12 +98,12 @@ export const ignoreDoubles = <T>(strFn: ToString<T> = toString) => (logger?: Log
 
 export const cache = <T>(strFn: ToString<T> = toString) => (fn: Filter<T>): Filter<T> => {
   const shouldFollowCache: { [key: string]: boolean } = {};
-  return function cachedShouldFollow(location: T): boolean {
+  return function cachedShouldFollow({ location }: { location: T }): boolean {
     const string = strFn(location);
     if (shouldFollowCache.hasOwnProperty(string)) {
       return shouldFollowCache[string];
     }
-    const shouldFollow = fn(location);
+    const shouldFollow = fn({ location });
     shouldFollowCache[string] = shouldFollow;
     return shouldFollow;
   };

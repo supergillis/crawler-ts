@@ -16,7 +16,7 @@ export const ignoreUrlRegex = ignoreRegex(urlToString);
 export const ignoreUrlDoubles = ignoreDoubles(urlToString);
 
 export function allowHttpOk(logger?: Logger) {
-  return function (url: URL, response: Response): boolean {
+  return function <Res extends Response>({ response }: { response: Res }): boolean {
     if (response.status !== 200) {
       logger?.info(`Not allowing ${response.status}`);
       return false;
@@ -28,7 +28,7 @@ export function allowHttpOk(logger?: Logger) {
 const htmlContentType = /text\/html;?.*/;
 
 export function allowHtml(logger?: Logger) {
-  return function <Res extends Response>(url: URL, response: Res): boolean {
+  return function <Res extends Response>({ location, response }: { location: URL; response: Res }): boolean {
     const contentType = response.headers['content-type'];
     if (!contentType || !htmlContentType.test(contentType)) {
       logger?.info(`Not allowing ${contentType}`);
@@ -39,9 +39,9 @@ export function allowHtml(logger?: Logger) {
 }
 
 export function allowHosts(allowedHosts: string[], logger?: Logger): UrlFilter {
-  return (url: URL): boolean => {
-    if (allowedHosts.indexOf(url.host) === -1) {
-      logger?.info(`Host not allowed ${url.host}`);
+  return ({ location }): boolean => {
+    if (allowedHosts.indexOf(location.host) === -1) {
+      logger?.info(`Host not allowed ${location.host}`);
       return false;
     }
     return true;
@@ -50,9 +50,9 @@ export function allowHosts(allowedHosts: string[], logger?: Logger): UrlFilter {
 
 export function allowProtocols(allowedProtocols: string[], logger?: Logger): UrlFilter {
   const transformedProtocols = allowedProtocols.map((protocol) => `${protocol}:`);
-  return (url: URL): boolean => {
-    if (transformedProtocols.indexOf(url.protocol) === -1) {
-      logger?.info(`Protocol not allowed ${url.protocol}`);
+  return ({ location }): boolean => {
+    if (transformedProtocols.indexOf(location.protocol) === -1) {
+      logger?.info(`Protocol not allowed ${location.protocol}`);
       return false;
     }
     return true;

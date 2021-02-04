@@ -5,15 +5,11 @@ import { crawl as crawlBase, Config as ConfigBase } from 'crawler-ts';
 import { createRequester as createFetchRequester } from 'crawler-ts-fetch';
 import { Response } from './filter';
 
-export type Root = Node[];
-
-export interface Result {
-  url: URL;
-  root: Root;
-}
+export type Parsed = Node[];
 
 export function createRequester(delayMilliseconds?: number) {
   const requester = createFetchRequester(delayMilliseconds);
+
   return async (url: URL): Promise<Response> => {
     const response = await requester(url.href);
     const body = await response.text();
@@ -25,16 +21,13 @@ export function createRequester(delayMilliseconds?: number) {
   };
 }
 
-export async function parser<R extends Response>(url: URL, response: R): Promise<Result> {
-  return new Promise<Result>((resolve, reject) => {
+export async function parser<R extends Response>({ response }: { response: R }): Promise<Parsed> {
+  return new Promise<Parsed>((resolve, reject) => {
     const handler = new DomHandler((e, root) => {
       if (e) {
         reject(e);
       } else {
-        resolve({
-          url,
-          root,
-        });
+        resolve(root);
       }
     });
 
@@ -44,14 +37,14 @@ export async function parser<R extends Response>(url: URL, response: R): Promise
   });
 }
 
-export async function* follower(result: Result): AsyncGenerator<URL> {
+export async function* follower({ location, parsed }: { location: URL; parsed: Parsed }): AsyncGenerator<URL> {
   const links = select
-    .selectAll('a', result.root)
+    .selectAll('a', parsed)
     .map((node) => node as Element)
     .map((node) => node.attribs['href'])
     .filter((link) => !!link);
   for (const link of links) {
-    const url = new URL(link, result.url.href);
+    const url = new URL(link, location.href);
     url.username = '';
     url.password = '';
     url.hash = '';
@@ -59,7 +52,7 @@ export async function* follower(result: Result): AsyncGenerator<URL> {
   }
 }
 
-export type Config = Omit<ConfigBase<URL, Response, Result>, 'follower' | 'parser' | 'requester'>;
+export type Config = Omit<ConfigBase<URL, Response, Parsed>, 'follower' | 'parser' | 'requester'>;
 
 export function crawl(config: Config) {
   return crawlBase({

@@ -1,16 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { crawl, chain, allowExtensions, ignoreDoubles, ignoreRegex } from 'crawler-ts/src';
+import { crawl, allowExtensions, ignoreDoubles, ignoreRegex, Logger } from 'crawler-ts/src';
 
-interface FsEntry {
-  stat: fs.Stats;
-  path: string;
-}
-
-const entryIsFile = (entry: FsEntry) => entry.stat.isFile();
+const entryIsFile = ({ parsed }: { parsed: fs.Stats }) => parsed.isFile();
 
 // Create filters for paths and FsEntry
-const entryIgnoreExtensions = allowExtensions<FsEntry>((entry) => entry.path);
+const allowTypeScript = allowExtensions()(['ts']);
 const pathIgnoreRegex = ignoreRegex();
 const pathIgnoreDoubles = ignoreDoubles();
 
@@ -18,15 +13,15 @@ const pathIgnoreDoubles = ignoreDoubles();
  * File crawler that finds all ".ts" files.
  */
 const fileCrawler = () =>
-  crawl<string, FsEntry, FsEntry>({
+  crawl<string, fs.Stats, fs.Stats>({
     // Use the file system to request paths
     requester: fileRequester(),
     // Ignore .git, dist and node_module files
     shouldParse: pathIgnoreRegex([/\/\.git$/, /\/dist$/, /\/node_modules$/]),
-    // No need for parsing, just return the response as result
-    parser: (_url, response) => response,
+    // No need for parsing, just return the response
+    parser: ({ response }) => response,
     // Only yield paths with extension ".ts" that are files
-    shouldYield: chain(entryIsFile, entryIgnoreExtensions(['ts'])),
+    shouldYield: ({ location, parsed }) => entryIsFile({ parsed }) && allowTypeScript({ location }),
     // Follow files in a directory
     follower: fileFollower(),
     // Ignore doubles
@@ -36,21 +31,19 @@ const fileCrawler = () =>
 /**
  * Requester that requests file system stats for the path.
  */
-const fileRequester = () => async (path: string): Promise<FsEntry> => {
-  return {
-    stat: fs.statSync(path),
-    path,
-  };
-};
+const fileRequester = () => async (location: string): Promise<fs.Stats> => fs.statSync(location);
 
 /**
  * Follower that follows all paths inside a directory.
  */
-const fileFollower = () =>
-  async function* (entry: FsEntry) {
-    if (entry.stat.isDirectory()) {
-      const entries = fs.readdirSync(entry.path);
-      yield* entries.map((e) => path.resolve(entry.path, e));
+const fileFollower = (logger?: Logger) =>
+  async function* ({ location, parsed }: { location: string; parsed: fs.Stats }) {
+    if (parsed.isDirectory()) {
+      logger?.info(`Following directory "${location}"`);
+      const entries = fs.readdirSync(location);
+      yield* entries.map((e) => path.resolve(location, e));
+    } else {
+      logger?.info(`Not following non-directory "${location}"`);
     }
   };
 
@@ -58,9 +51,9 @@ async function main() {
   const root = process.argv?.[2] ?? process.cwd();
   const crawler = fileCrawler();
 
-  for await (const result of crawler(root)) {
+  for await (const { location, parsed } of crawler(root)) {
     // Do something with the crawled result
-    console.log(result.path);
+    console.log(location, parsed.size);
   }
 }
 
