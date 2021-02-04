@@ -1,5 +1,7 @@
+import { selectOne } from 'css-select';
+import { getText } from 'domutils';
 import { chain, allowRegex, ignoreDoubles } from 'crawler-ts/src';
-import { crawl, allowHtml, allowProtocols } from 'crawler-ts-htmlparser2/src';
+import { createCrawler, allowHtml, allowProtocols } from 'crawler-ts-htmlparser2/src';
 
 async function main() {
   const nasaMarsBlogRegex = /\/mars\.nasa\.gov\/news\/([\d]+)\//;
@@ -8,7 +10,7 @@ async function main() {
 
   // In this case we find the ":id" piece in the URL and use it to detect duplicates
   const ignoreMarsNewsDoubles = ignoreDoubles<URL>((url) => {
-    const match = url.pathname.match(/news\/([\d]+)\//);
+    const match = url.href.match(nasaMarsBlogRegex);
     const newsId = match?.[1];
     return newsId ?? '';
   });
@@ -26,7 +28,7 @@ async function main() {
     ignoreMarsNewsDoubles(),
   );
 
-  const crawler = crawl({
+  const crawler = createCrawler({
     shouldParse,
     shouldQueue,
     shouldYield: () => true,
@@ -35,7 +37,9 @@ async function main() {
   const root = new URL('https://mars.nasa.gov/news');
   for await (const { location, parsed } of crawler(root)) {
     // Do something with the crawled result
-    console.log(location.href, parsed.length);
+    const titleElement = selectOne('h1', parsed);
+    const title = titleElement ? getText(titleElement).trim() : 'N/A';
+    console.log(location.href, title);
   }
 }
 

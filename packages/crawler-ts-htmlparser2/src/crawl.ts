@@ -1,11 +1,11 @@
-import select from 'css-select';
-import { Parser } from 'htmlparser2';
-import { DomHandler, Node, Element } from 'domhandler';
-import { crawl as crawlBase, Config as ConfigBase } from 'crawler-ts';
+import { selectAll } from 'css-select';
+import { parseDocument } from 'htmlparser2';
+import { Document, Element } from 'domhandler';
+import { createCrawler as createCrawlerBase, Options as OptionsBase } from 'crawler-ts';
 import { createRequester as createFetchRequester } from 'crawler-ts-fetch';
 import { Response } from './filter';
 
-export type Parsed = Node[];
+export type Parsed = Document;
 
 export function createRequester(delayMilliseconds?: number) {
   const requester = createFetchRequester(delayMilliseconds);
@@ -22,24 +22,11 @@ export function createRequester(delayMilliseconds?: number) {
 }
 
 export async function parser<R extends Response>({ response }: { response: R }): Promise<Parsed> {
-  return new Promise<Parsed>((resolve, reject) => {
-    const handler = new DomHandler((e, root) => {
-      if (e) {
-        reject(e);
-      } else {
-        resolve(root);
-      }
-    });
-
-    const parser = new Parser(handler);
-    parser.write(response.body);
-    parser.end();
-  });
+  return parseDocument(response.body);
 }
 
 export async function* follower({ location, parsed }: { location: URL; parsed: Parsed }): AsyncGenerator<URL> {
-  const links = select
-    .selectAll('a', parsed)
+  const links = selectAll('a', parsed)
     .map((node) => node as Element)
     .map((node) => node.attribs['href'])
     .filter((link) => !!link);
@@ -52,11 +39,11 @@ export async function* follower({ location, parsed }: { location: URL; parsed: P
   }
 }
 
-export type Config = Omit<ConfigBase<URL, Response, Parsed>, 'follower' | 'parser' | 'requester'>;
+export type Options = Omit<OptionsBase<URL, Response, Parsed>, 'follower' | 'parser' | 'requester'>;
 
-export function crawl(config: Config) {
-  return crawlBase({
-    ...config,
+export function createCrawler(options: Options) {
+  return createCrawlerBase({
+    ...options,
     parser,
     follower,
     requester: createRequester(),

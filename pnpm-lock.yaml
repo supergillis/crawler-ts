@@ -1,18 +1,23 @@
 importers:
   examples/fs:
     dependencies:
-      crawler-ts: link:../../modules/crawler-ts
+      crawler-ts: link:../../packages/crawler-ts
+      crawler-ts-fs: link:../../packages/crawler-ts-fs
     devDependencies:
       '@types/node': 12.19.15
       typescript: 4.1.3
     specifiers:
       '@types/node': 12.x
       crawler-ts: workspace:*
+      crawler-ts-fs: workspace:*
       typescript: ^4.1.3
-  examples/http:
+  examples/hacker-news:
     dependencies:
-      crawler-ts: link:../../modules/crawler-ts
-      crawler-ts-htmlparser2: link:../../modules/crawler-ts-htmlparser2
+      crawler-ts: link:../../packages/crawler-ts
+      crawler-ts-htmlparser2: link:../../packages/crawler-ts-htmlparser2
+      css-select: 3.1.2
+      domhandler: 4.0.0
+      domutils: 2.4.4
     devDependencies:
       '@types/node': 12.19.15
       typescript: 4.1.3
@@ -20,13 +25,32 @@ importers:
       '@types/node': 12.x
       crawler-ts: workspace:*
       crawler-ts-htmlparser2: workspace:*
+      css-select: ^3.1.2
+      domhandler: ^4.0.0
+      domutils: ^2.4.4
       typescript: ^4.1.3
-  modules/crawler-ts:
+  examples/mars-news:
+    dependencies:
+      crawler-ts: link:../../packages/crawler-ts
+      crawler-ts-htmlparser2: link:../../packages/crawler-ts-htmlparser2
+      css-select: 3.1.2
+      domutils: 2.4.4
+    devDependencies:
+      '@types/node': 12.19.15
+      typescript: 4.1.3
+    specifiers:
+      '@types/node': 12.x
+      crawler-ts: workspace:*
+      crawler-ts-htmlparser2: workspace:*
+      css-select: ^3.1.2
+      domutils: ^2.4.4
+      typescript: ^4.1.3
+  packages/crawler-ts:
     devDependencies:
       typescript: 4.1.3
     specifiers:
       typescript: ^4.1.3
-  modules/crawler-ts-fetch:
+  packages/crawler-ts-fetch:
     dependencies:
       node-fetch: 2.6.1
     devDependencies:
@@ -36,35 +60,41 @@ importers:
       '@types/node-fetch': ^2.5.7
       node-fetch: ^2.6.0
       typescript: ^4.1.3
-  modules/crawler-ts-htmlparser2:
+  packages/crawler-ts-fs:
+    dependencies:
+      crawler-ts: link:../crawler-ts
+    devDependencies:
+      '@types/node': 12.19.15
+      typescript: 4.1.3
+    specifiers:
+      '@types/node': 12.x
+      crawler-ts: ^1.1.1
+      typescript: ^4.1.3
+  packages/crawler-ts-htmlparser2:
     dependencies:
       crawler-ts: link:../crawler-ts
       crawler-ts-fetch: link:../crawler-ts-fetch
-      css-select: 2.1.0
-      domhandler: 3.3.0
-      htmlparser2: 4.1.0
+      css-select: 3.1.2
+      domhandler: 4.0.0
+      htmlparser2: 6.0.0
     devDependencies:
       typescript: 4.1.3
     specifiers:
-      crawler-ts: ^1.0.2
-      crawler-ts-fetch: ^1.0.2
-      css-select: ^2.1.0
-      domhandler: ^3.0.0
-      htmlparser2: ^4.1.0
+      crawler-ts: ^1.1.1
+      crawler-ts-fetch: ^1.1.1
+      css-select: ^3.1.2
+      domhandler: ^4.0.0
+      htmlparser2: ^6.0.0
       typescript: ^4.1.3
 lockfileVersion: 5.2
 packages:
   /@types/node-fetch/2.5.7:
     dependencies:
-      '@types/node': 12.19.11
+      '@types/node': 12.19.15
       form-data: 3.0.0
     dev: true
     resolution:
       integrity: sha512-o2WVNf5UhWRkxlf6eq+jMZDu7kjgpgJfl4xVNlvryc95O/6F2ld8ztKX+qu+Rjyet93WAWm5LjeX9H5FGkODvw==
-  /@types/node/12.19.11:
-    dev: true
-    resolution:
-      integrity: sha512-bwVfNTFZOrGXyiQ6t4B9sZerMSShWNsGRw8tC5DY1qImUNczS9SjT4G6PnzjCnxsu5Ubj6xjL2lgwddkxtQl5w==
   /@types/node/12.19.15:
     dev: true
     resolution:
@@ -85,58 +115,40 @@ packages:
       node: '>= 0.8'
     resolution:
       integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==
-  /css-select/2.1.0:
+  /css-select/3.1.2:
     dependencies:
       boolbase: 1.0.0
-      css-what: 3.4.2
-      domutils: 1.7.0
-      nth-check: 1.0.2
+      css-what: 4.0.0
+      domhandler: 4.0.0
+      domutils: 2.4.4
+      nth-check: 2.0.0
     dev: false
     resolution:
-      integrity: sha512-Dqk7LQKpwLoH3VovzZnkzegqNSuAziQyNZUcrdDM401iY+R5NkGBXGmtO05/yaXQziALuPogeG0b7UAgjnTJTQ==
-  /css-what/3.4.2:
+      integrity: sha512-qmss1EihSuBNWNNhHjxzxSfJoFBM/lERB/Q4EnsJQQC62R2evJDW481091oAdOr9uh46/0n4nrg0It5cAnj1RA==
+  /css-what/4.0.0:
     dev: false
     engines:
       node: '>= 6'
     resolution:
-      integrity: sha512-ACUm3L0/jiZTqfzRM3Hi9Q8eZqd6IK37mMWPLz9PJxkLWllYeRf+EHUSHYEtFop2Eqytaq1FizFVh7XfBnXCDQ==
+      integrity: sha512-teijzG7kwYfNVsUh2H/YN62xW3KK9YhXEgSlbxMlcyjPNvdKJqFx5lrwlJgoFP1ZHlB89iGDlo/JyshKeRhv5A==
   /delayed-stream/1.0.0:
     dev: true
     engines:
       node: '>=0.4.0'
     resolution:
       integrity: sha1-3zrhmayt+31ECqrgsp4icrJOxhk=
-  /dom-serializer/0.2.2:
-    dependencies:
-      domelementtype: 2.1.0
-      entities: 2.1.0
-    dev: false
-    resolution:
-      integrity: sha512-2/xPb3ORsQ42nHYiSunXkDjPLBaEj/xTwUO4B7XCZQTRk7EBtTOPaygh10YAAh2OI1Qrp6NWfpAhzswj0ydt9g==
   /dom-serializer/1.2.0:
     dependencies:
       domelementtype: 2.1.0
       domhandler: 4.0.0
-      entities: 2.1.0
+      entities: 2.2.0
     dev: false
     resolution:
       integrity: sha512-n6kZFH/KlCrqs/1GHMOd5i2fd/beQHuehKdWvNNffbGHTr/almdhuVvTVFb3V7fglz+nC50fFusu3lY33h12pA==
-  /domelementtype/1.3.1:
-    dev: false
-    resolution:
-      integrity: sha512-BSKB+TSpMpFI/HOxCNr1O8aMOTZ8hT3pM3GQ0w/mWRmkhEDSFJkkyzz4XQsBV44BChwGkrDfMyjVD0eA2aFV3w==
   /domelementtype/2.1.0:
     dev: false
     resolution:
       integrity: sha512-LsTgx/L5VpD+Q8lmsXSHW2WpA+eBlZ9HPf3erD1IoPF00/3JKHZ3BknUVA2QGDNu69ZNmyFmCWBSO45XjYKC5w==
-  /domhandler/3.3.0:
-    dependencies:
-      domelementtype: 2.1.0
-    dev: false
-    engines:
-      node: '>= 4'
-    resolution:
-      integrity: sha512-J1C5rIANUbuYK+FuFL98650rihynUOEzRLxW+90bKZRWB6A1X1Tf82GxR1qAWLyfNPRvjqfip3Q5tdYlmAa9lA==
   /domhandler/4.0.0:
     dependencies:
       domelementtype: 2.1.0
@@ -145,13 +157,6 @@ packages:
       node: '>= 4'
     resolution:
       integrity: sha512-KPTbnGQ1JeEMQyO1iYXoagsI6so/C96HZiFyByU3T6iAzpXn8EGEvct6unm1ZGoed8ByO2oirxgwxBmqKF9haA==
-  /domutils/1.7.0:
-    dependencies:
-      dom-serializer: 0.2.2
-      domelementtype: 1.3.1
-    dev: false
-    resolution:
-      integrity: sha512-Lgd2XcJ/NjEw+7tFvfKxOzCYKZsdct5lczQ2ZaQY8Djz7pfAD3Gbp8ySJWtreII/vDlMVmxwa6pHmdxIYgttDg==
   /domutils/2.4.4:
     dependencies:
       dom-serializer: 1.2.0
@@ -160,10 +165,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-jBC0vOsECI4OMdD0GC9mGn7NXPLb+Qt6KW1YDQzeQYRUFKmNG8lh7mO5HiELfr+lLQE7loDVI4QcAxV80HS+RA==
-  /entities/2.1.0:
+  /entities/2.2.0:
     dev: false
     resolution:
-      integrity: sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==
+      integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==
   /form-data/3.0.0:
     dependencies:
       asynckit: 0.4.0
@@ -174,15 +179,15 @@ packages:
       node: '>= 6'
     resolution:
       integrity: sha512-CKMFDglpbMi6PyN+brwB9Q/GOw0eAnsrEZDgcsH5Krhz5Od/haKHAX0NmQfha2zPPz0JpWzA7GJHGSnvCRLWsg==
-  /htmlparser2/4.1.0:
+  /htmlparser2/6.0.0:
     dependencies:
       domelementtype: 2.1.0
-      domhandler: 3.3.0
+      domhandler: 4.0.0
       domutils: 2.4.4
-      entities: 2.1.0
+      entities: 2.2.0
     dev: false
     resolution:
-      integrity: sha512-4zDq1a1zhE4gQso/c5LP1OtrhYTncXNSpvJYtWJBtXAETPlMfi3IFNjGuQbYLuVY4ZR0QMqRVvo4Pdy9KLyP8Q==
+      integrity: sha512-numTQtDZMoh78zJpaNdJ9MXb2cv5G3jwUoe3dMQODubZvLoGvTE/Ofp6sHvH8OGKcN/8A47pGLi/k58xHP/Tfw==
   /mime-db/1.45.0:
     dev: true
     engines:
@@ -203,12 +208,12 @@ packages:
       node: 4.x || >=6.0.0
     resolution:
       integrity: sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
-  /nth-check/1.0.2:
+  /nth-check/2.0.0:
     dependencies:
       boolbase: 1.0.0
     dev: false
     resolution:
-      integrity: sha512-WeBOdju8SnzPN5vTUJYxYUxLeXpCaVP5i5e0LF8fg7WORF2Wd7wFX/pk0tYZk7s8T+J7VLy0Da6J1+wCT0AtHg==
+      integrity: sha512-i4sc/Kj8htBrAiH1viZ0TgU8Y5XqCaV/FziYK6TBczxmeKm3AEFWqqF3195yKudrarqy7Zu80Ra5dobFjn9X/Q==
   /typescript/4.1.3:
     dev: true
     engines:

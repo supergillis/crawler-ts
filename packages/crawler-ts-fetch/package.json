@@ -1,6 +1,17 @@
 {
-  "name": "crawler-ts-htmlparser2",
-  "version": "1.1.0",
+  "name": "crawler-ts-fetch",
+  "version": "1.1.1",
+  "description": "Lightweight crawler written in TypeScript using ES6 generators.",
+  "keywords": [
+    "crawl",
+    "crawler",
+    "crawling-framework",
+    "crawling",
+    "es6-generators",
+    "typescript",
+    "web-crawler",
+    "web-crawling"
+  ],
   "author": {
     "name": "Gillis Van Ginderacter",
     "email": "supergillis@gmail.com",
@@ -21,20 +32,13 @@
   "types": "./dist/cjs/index.d.ts",
   "module": "./dist/esm/index.js",
   "dependencies": {
-    "crawler-ts": "^1.0.2",
-    "crawler-ts-fetch": "^1.0.2",
-    "css-select": "^2.1.0",
-    "domhandler": "^3.0.0",
-    "htmlparser2": "^4.1.0"
+    "node-fetch": "^2.6.0"
   },
   "peerDependencies": {
-    "crawler-ts": "^1.0.2",
-    "crawler-ts-fetch": "^1.0.2",
-    "css-select": "^2.1.0",
-    "domhandler": "^3.0.0",
-    "htmlparser2": "^4.1.0"
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
+    "@types/node-fetch": "^2.5.7",
     "typescript": "^4.1.3"
   }
 }

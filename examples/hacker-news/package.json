@@ -1,5 +1,5 @@
 {
-  "name": "crawler-ts-example-http",
+  "name": "@crawler-ts/example-mars-news",
   "version": "1.0.0",
   "private": true,
   "author": {
@@ -13,7 +13,10 @@
   },
   "dependencies": {
     "crawler-ts": "workspace:*",
-    "crawler-ts-htmlparser2": "workspace:*"
+    "crawler-ts-htmlparser2": "workspace:*",
+    "css-select": "^3.1.2",
+    "domhandler": "^4.0.0",
+    "domutils": "^2.4.4"
   },
   "devDependencies": {
     "@types/node": "12.x",

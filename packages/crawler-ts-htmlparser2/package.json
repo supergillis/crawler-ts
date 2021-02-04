@@ -1,0 +1,51 @@
+{
+  "name": "crawler-ts-htmlparser2",
+  "version": "1.1.1",
+  "description": "Lightweight crawler written in TypeScript using ES6 generators.",
+  "keywords": [
+    "crawl",
+    "crawler",
+    "crawling-framework",
+    "crawling",
+    "es6-generators",
+    "typescript",
+    "web-crawler",
+    "web-crawling"
+  ],
+  "author": {
+    "name": "Gillis Van Ginderacter",
+    "email": "supergillis@gmail.com",
+    "url": "https://github.com/supergillis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supergillis/crawler-ts.git"
+  },
+  "license": "GPLv3",
+  "scripts": {
+    "build": "pnpx tsc -p tsconfig.json && pnpx tsc -p tsconfig.esm.json",
+    "prepublishOnly": "pnpm run build",
+    "prepack": "cp ../../README.md .",
+    "postpack": "rm README.md"
+  },
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "dependencies": {
+    "crawler-ts": "^1.1.1",
+    "crawler-ts-fetch": "^1.1.1",
+    "css-select": "^3.1.2",
+    "domhandler": "^4.0.0",
+    "htmlparser2": "^6.0.0"
+  },
+  "peerDependencies": {
+    "crawler-ts": "^1.1.1",
+    "crawler-ts-fetch": "^1.1.1",
+    "css-select": "^3.1.2",
+    "domhandler": "^4.0.0",
+    "htmlparser2": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.1.3"
+  }
+}
