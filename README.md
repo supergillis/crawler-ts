@@ -2,19 +2,27 @@
 
 Lightweight crawler written in TypeScript using ES6 generators.
 
-<a href="https://www.npmjs.com/package/crawler-ts">
-  <img alt="npm" src="https://img.shields.io/npm/v/crawler-ts.svg?color=green"/>
-</a>
-<a href="https://bundlephobia.com/result?p=crawler-ts">
-  <img alt="bundle size" src="https://img.shields.io/bundlephobia/minzip/crawler-ts?label=bundle size"/>
-</a>
-<img alt="license" src="https://img.shields.io/npm/l/crawler-ts?label=license&color=green"/>
+<div>
+  <a href="https://www.npmjs.com/package/crawler-ts">
+    <img alt="npm" src="https://img.shields.io/npm/v/crawler-ts.svg?color=green"/>
+  </a>
+  <a href="https://bundlephobia.com/result?p=crawler-ts">
+    <img alt="bundle size" src="https://img.shields.io/bundlephobia/minzip/crawler-ts?label=bundle size"/>
+  </a>
+  <a href="https://github.com/supergillis/crawler-ts/blob/master/LICENSE">
+    <img alt="license" src="https://img.shields.io/npm/l/crawler-ts?label=license&color=green"/>
+  </a>
+</div>
 
 ## Installation
 
 ```sh
 npm install --save crawler-ts crawler-ts-htmlparser2
 ```
+
+## Introduction
+
+[This post](https://observablehq.com/@supergillis/introduction-to-crawler-ts) has a good introduction to `crawler-ts`.
 
 ## Examples
 
@@ -83,14 +91,14 @@ There are built-in modules available that implement some of these configuration 
 
 ### crawler-ts-fetch
 
-<p>
+<div>
   <a href="https://www.npmjs.com/package/crawler-ts-fetch">
     <img alt="npm" src="https://img.shields.io/npm/v/crawler-ts-fetch.svg?color=green"/>
   </a>
   <a href="https://bundlephobia.com/result?p=crawler-ts-fetch">
     <img alt="bundle size" src="https://img.shields.io/bundlephobia/minzip/crawler-ts-fetch?label=bundle size"/>
   </a>
-</p>
+</div>
 
 This module implements a `requester` that uses `node-fetch` to request content over HTTP.
 
