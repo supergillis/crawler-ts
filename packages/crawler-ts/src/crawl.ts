@@ -1,3 +1,5 @@
+import { createParallelIterator } from './parallel';
+
 type ValueOrPromise<T> = T | Promise<T>;
 
 export interface Logger {
@@ -50,14 +52,19 @@ export interface Options<L, R, P> {
    * @default undefined
    */
   logger?: Logger;
+  /**
+   * @default 0
+   */
+  concurrency?: number;
 }
 
-export function createCrawler<L, R, P>(
-  options: Options<L, R, P>,
-): (start: L) => AsyncGenerator<PostParseProps<L, R, P>> {
-  const { requester, shouldParse, parser, shouldYield, follower, shouldQueue, logger } = options;
+type Crawler<L, R, P> = AsyncIterableIterator<PostParseProps<L, R, P>>;
 
-  return async function* gen(location: L): AsyncGenerator<PostParseProps<L, R, P>> {
+export function createCrawler<L, R, P>(options: Options<L, R, P>): (start: L) => Crawler<L, R, P> {
+  const { requester, shouldParse, parser, shouldYield, follower, shouldQueue, logger, concurrency = 1 } = options;
+
+  const parallel = createParallelIterator(Math.max(concurrency, 1));
+  const gen = async function* gen(location: L): Crawler<L, R, P> {
     try {
       logger?.info(`Requesting ${location}`);
       const response = await requester(location);
@@ -75,20 +82,28 @@ export function createCrawler<L, R, P>(
         }
 
         for await (const next of follower({ location, response, parsed })) {
-          try {
-            if (await shouldQueue({ location: next, origin: location, response, parsed })) {
-              logger?.info(`Queueing ${next}`);
-              yield* gen(next);
+          // For some reason we need to pass `next` as a parameter for it to end up in the async iterator correctly
+          const recurse = async function* recurse(next: L) {
+            try {
+              if (await shouldQueue({ location: next, origin: location, response, parsed })) {
+                logger?.info(`Queueing ${next}`);
+                yield* gen(next);
+              }
+            } catch (e) {
+              logger?.error(`Cannot queue ${next}`);
+              logger?.error(e);
             }
-          } catch (e) {
-            logger?.error(`Cannot queue ${next}`);
-            logger?.error(e);
-          }
+          };
+          q.push(recurse(next));
         }
       }
     } catch (e) {
       logger?.error(`Cannot visit ${location}`);
       logger?.error(e);
     }
+  };
+  return async function* (start: L): Crawler<L, R, P> {
+    parallel.push(gen(start));
+    yield* parallel.generator();
   };
 }
