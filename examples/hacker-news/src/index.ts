@@ -1,51 +1,63 @@
+import chalk from 'chalk';
 import type { Element } from 'domhandler';
 import { selectAll } from 'css-select';
 import { getAttributeValue, getText } from 'domutils';
-import { chain, allowRegex, ignoreDoubles } from 'crawler-ts/src';
-import { createCrawler, allowHtml, allowProtocols } from 'crawler-ts-htmlparser2/src';
+import { chain, ignoreDoubles } from 'crawler-ts/src';
+import { allowRegex, allowHtml, allowProtocols, createCrawler, allowHttpOk } from 'crawler-ts-htmlparser2/src';
 
 async function main() {
   const hackerNewsPageRegex = /\/news\.ycombinator\.com\/news\?p=([\d]+)/;
 
-  const allowUrlRegex = allowRegex<URL>((url) => url.href);
-
   // In this case we find the "?p=:page" piece in the URL and use it to detect duplicates
-  const ignorePageDoubles = ignoreDoubles<URL>((url) => {
-    const match = url.href.match(hackerNewsPageRegex);
+  const ignorePageDoubles = ignoreDoubles((location: URL) => {
+    const match = location.href.match(hackerNewsPageRegex);
     const pageId = match?.[1];
     return pageId ?? '';
   });
 
-  // Only parse text/html
-  const shouldParse = allowHtml();
+  const parseFilter = chain(
+    allowHttpOk(),
+    // Allow text/html
+    allowHtml(),
+  );
 
-  // Only queue links with
-  // - ignore already visited
-  const shouldQueue = chain(
+  const followFilter = chain(
     allowProtocols(['http', 'https']),
     // Allow news pages
-    allowUrlRegex([hackerNewsPageRegex]),
+    allowRegex([hackerNewsPageRegex]),
     // Ignore already visited
     ignorePageDoubles(),
   );
 
   const crawler = createCrawler({
-    shouldParse,
-    shouldQueue,
-    shouldYield: () => true,
+    parseFilter,
+    followFilter,
   });
 
   const root = new URL('https://news.ycombinator.com/news');
   for await (const { location, parsed } of crawler(root)) {
     // Do something with the crawled result
     const titleElements = selectAll('a.storylink', parsed);
-    const titles = titleElements.map((e) => ({
+    const titles: Title[] = titleElements.map((e) => ({
       value: getText(e),
       href: getAttributeValue(e as Element, 'href'),
+      location,
     }));
+
     // Log all titles
-    titles.forEach((title) => console.log(title.href, title.value));
+    titles.forEach(log);
   }
+}
+
+interface Title {
+  value: string;
+  href: string | undefined;
+  location: URL;
+}
+
+function log({ value, href, location }: Title) {
+  const resolved = new URL(href ?? '', location).href;
+  console.log(chalk.bold(value), chalk.dim(resolved));
 }
 
 main();

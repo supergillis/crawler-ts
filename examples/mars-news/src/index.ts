@@ -16,11 +16,11 @@ async function main() {
   });
 
   // Only parse text/html
-  const shouldParse = allowHtml();
+  const parseFilter = allowHtml();
 
   // Only queue links with
   // - ignore already visited
-  const shouldQueue = chain(
+  const followFilter = chain(
     allowProtocols(['http', 'https']),
     // Allow news pages
     allowUrlRegex([nasaMarsBlogRegex]),
@@ -29,9 +29,8 @@ async function main() {
   );
 
   const crawler = createCrawler({
-    shouldParse,
-    shouldQueue,
-    shouldYield: () => true,
+    parseFilter,
+    followFilter,
   });
 
   const root = new URL('https://mars.nasa.gov/news');

@@ -1,42 +1,62 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { createCrawler as createCrawlerBase, Options as OptionsBase, Logger } from 'crawler-ts';
+import * as crawler from 'crawler-ts';
 
+export type Location = string;
 export type Response = fs.Stats;
 export type Parsed = fs.Stats;
+
+export type RequesterOptions = crawler.RequesterOptions<Location>;
+export type RequesterResult = crawler.RequesterResult<Location, Response>;
+export type ParserOptions = crawler.ParserOptions<Location, Response>;
+export type ParserResult = crawler.ParserResult<Location, Response, Parsed>;
+export type FollowerOptions = crawler.FollowerOptions<Location, Response, Parsed>;
 
 /**
  * Requester that requests file system stats for the path.
  */
-export async function requester(location: string): Promise<Response> {
-  return fs.statSync(location);
+export async function defaultRequester(options: RequesterOptions): Promise<RequesterResult> {
+  return {
+    ...options,
+    response: fs.statSync(options.location),
+  };
 }
 
-export async function parser({ response }: { response: Response }): Promise<Parsed> {
-  return response;
+export async function defaultParser(options: ParserOptions): Promise<ParserResult> {
+  return {
+    ...options,
+    parsed: options.response,
+  };
 }
 
 /**
  * Follower that follows all paths inside a directory.
  */
-export const createFollower = (logger?: Logger) =>
-  async function* follower({ location, parsed }: { location: string; parsed: Parsed }) {
+export const createDefaultFollower = (logger?: crawler.Logger) =>
+  async function* follower(options: FollowerOptions): AsyncGenerator<Location> {
+    const { parsed, location } = options;
     if (parsed.isDirectory()) {
       logger?.info(`Following directory "${location}"`);
+
       const entries = fs.readdirSync(location);
-      yield* entries.map((e) => path.resolve(location, e));
+      for (const entry of entries) {
+        yield path.resolve(location, entry);
+      }
     } else {
       logger?.info(`Not following non-directory "${location}"`);
     }
   };
 
-export type Options = Omit<OptionsBase<string, Response, Parsed>, 'follower' | 'parser' | 'requester'>;
+export type Options = Omit<
+  crawler.FilteredCrawlerOptions<Location, Response, Parsed>,
+  'follower' | 'parser' | 'requester'
+>;
 
-export function createCrawler(options: Options) {
-  return createCrawlerBase({
+export function createCrawler(options: Options): crawler.Crawler<Location, Response, Parsed> {
+  return crawler.createFilteredCrawler({
     ...options,
-    parser,
-    requester,
-    follower: createFollower(),
+    requester: defaultRequester,
+    parser: defaultParser,
+    follower: createDefaultFollower(),
   });
 }

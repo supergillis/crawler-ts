@@ -1,31 +1,43 @@
 import { selectAll } from 'css-select';
 import { parseDocument } from 'htmlparser2';
 import { Document, Element } from 'domhandler';
-import { createCrawler as createCrawlerBase, Options as OptionsBase } from 'crawler-ts';
-import { createRequester as createFetchRequester } from 'crawler-ts-fetch';
-import { Response } from './filter';
+import * as crawler from 'crawler-ts';
+import * as crawlerFetch from 'crawler-ts-fetch';
 
+export type Location = URL;
+export type Response = crawlerFetch.Response;
 export type Parsed = Document;
 
-export function createRequester(delayMilliseconds?: number) {
-  const requester = createFetchRequester(delayMilliseconds);
+export type Requester = crawler.Requester<Location, Response>;
+export type RequesterOptions = crawler.RequesterOptions<Location>;
+export type RequesterResult = crawler.RequesterResult<Location, Response>;
+export type Parser = crawler.Parser<Location, Response, Parsed>;
+export type ParserOptions = crawler.ParserOptions<Location, Response>;
+export type ParserResult = crawler.ParserResult<Location, Response, Parsed>;
+export type Follower = crawler.Follower<Location, Response, Parsed>;
+export type FollowerOptions = crawler.FollowerOptions<Location, Response, Parsed>;
 
-  return async (url: URL): Promise<Response> => {
-    const response = await requester(url.href);
-    const body = await response.text();
+export function createDefaultRequester(delayMilliseconds?: number) {
+  const requester = crawlerFetch.createRequester(delayMilliseconds);
+
+  return async (options: RequesterOptions): Promise<RequesterResult> => {
+    const response = await requester(options.location.href);
     return {
-      status: response.status,
-      headers: Object.fromEntries(response.headers.entries()),
-      body,
+      ...options,
+      response,
     };
   };
 }
 
-export async function parser<R extends Response>({ response }: { response: R }): Promise<Parsed> {
-  return parseDocument(response.body);
+export async function defaultParser(options: ParserOptions): Promise<ParserResult> {
+  const body = await options.response.text();
+  return {
+    ...options,
+    parsed: parseDocument(body),
+  };
 }
 
-export async function* follower({ location, parsed }: { location: URL; parsed: Parsed }): AsyncGenerator<URL> {
+export async function* defaultFollower({ location, parsed }: FollowerOptions): AsyncGenerator<Location> {
   const links = selectAll('a', parsed)
     .map((node) => node as Element)
     .map((node) => node.attribs['href'])
@@ -39,13 +51,16 @@ export async function* follower({ location, parsed }: { location: URL; parsed: P
   }
 }
 
-export type Options = Omit<OptionsBase<URL, Response, Parsed>, 'follower' | 'parser' | 'requester'>;
+export interface HtmlCrawlerOptions
+  extends Omit<crawler.FilteredCrawlerOptions<URL, Response, Parsed>, 'follower' | 'parser' | 'requester'> {
+  delayMilliseconds?: number;
+}
 
-export function createCrawler(options: Options) {
-  return createCrawlerBase({
+export function createCrawler(options: HtmlCrawlerOptions): crawler.Crawler<Location, Response, Parsed> {
+  return crawler.createFilteredCrawler({
     ...options,
-    parser,
-    follower,
-    requester: createRequester(),
+    requester: createDefaultRequester(options.delayMilliseconds),
+    parser: defaultParser,
+    follower: defaultFollower,
   });
 }

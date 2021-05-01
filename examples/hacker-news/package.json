@@ -12,6 +12,7 @@
     "url": "https://github.com/supergillis/crawler-ts.git"
   },
   "dependencies": {
+    "chalk": "^4.1.0",
     "crawler-ts": "workspace:*",
     "crawler-ts-htmlparser2": "workspace:*",
     "css-select": "^3.1.2",

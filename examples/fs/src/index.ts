@@ -1,13 +1,15 @@
 import * as fs from 'fs';
-import { allowExtensions, ignoreDoubles, ignoreRegex, Logger } from 'crawler-ts/src';
-import { createCrawler } from 'crawler-ts-fs/src';
+import { allowExtensions, ignoreDoubles, ignoreRegex } from 'crawler-ts/src';
+import { createCrawler, Location } from 'crawler-ts-fs/src';
 
 const entryIsFile = ({ parsed }: { parsed: fs.Stats }) => parsed.isFile();
 
+const locationToString = (value: Location) => value;
+
 // Create filters for paths and FsEntry
-const allowTypeScript = allowExtensions()(['ts']);
-const pathIgnoreRegex = ignoreRegex();
-const pathIgnoreDoubles = ignoreDoubles();
+const allowTypeScript = allowExtensions(locationToString)(['ts']);
+const pathIgnoreRegex = ignoreRegex(locationToString);
+const pathIgnoreDoubles = ignoreDoubles(locationToString);
 
 /**
  * File crawler that finds all ".ts" files.
@@ -15,11 +17,11 @@ const pathIgnoreDoubles = ignoreDoubles();
 const createTypeScriptCrawler = () =>
   createCrawler({
     // Ignore .git, dist and node_module files
-    shouldParse: pathIgnoreRegex([/\/\.git$/, /\/dist$/, /\/node_modules$/]),
+    requestFilter: pathIgnoreRegex([/\/\.git$/, /\/dist$/, /\/node_modules$/]),
     // Only yield paths with extension ".ts" that are files
-    shouldYield: ({ location, parsed }) => entryIsFile({ parsed }) && allowTypeScript({ location }),
+    // yieldFilter: (options) => entryIsFile(options) && allowTypeScript(options),
     // Ignore doubles
-    shouldQueue: pathIgnoreDoubles(),
+    followFilter: pathIgnoreDoubles(),
   });
 
 async function main() {

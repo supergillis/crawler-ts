@@ -1,45 +1,53 @@
-import { Logger, Filter, allowExtensions, allowRegex, ignoreDoubles, ignoreRegex } from 'crawler-ts';
+import { Response } from 'crawler-ts-fetch';
+import {
+  allowExtensions as allowExtensionsBase,
+  allowRegex as allowRegexBase,
+  ignoreRegex as ignoreRegexBase,
+  LocationFilter,
+  Logger,
+  WithLocation,
+} from 'crawler-ts';
 
-export interface Response {
-  status: number;
-  headers: Record<string, string>;
-  body: string;
-}
+export type WithResponse = { response: Response };
 
-export type UrlFilter = Filter<URL>;
+export type WithURL = WithLocation<URL>;
 
-export const urlToString = (url: URL) => url.href;
+export type URLFilter = LocationFilter<URL>;
 
-export const allowUrlRegex = allowRegex(urlToString);
-export const allowUrlExtensions = allowExtensions(urlToString);
-export const ignoreUrlRegex = ignoreRegex(urlToString);
-export const ignoreUrlDoubles = ignoreDoubles(urlToString);
+export const toString = (url: URL) => url.href;
+
+export const allowRegex = allowRegexBase(toString);
+export const allowExtensions = allowExtensionsBase(toString);
+export const ignoreRegex = ignoreRegexBase(toString);
 
 export function allowHttpOk(logger?: Logger) {
-  return function <Res extends Response>({ response }: { response: Res }): boolean {
-    if (response.status !== 200) {
-      logger?.info(`Not allowing ${response.status}`);
+  return function allowHttpOk({ response }: WithResponse): boolean {
+    if (!response.ok) {
+      logger?.info(`Not allowing status ${response.status}`);
       return false;
     }
     return true;
   };
 }
 
-const htmlContentType = /text\/html;?.*/;
+export function allowContentType(allowedContentType: RegExp, logger?: Logger) {
+  return function allowContentType({ response }: WithResponse): boolean {
+    const headers = response.headers.raw();
+    const contentType = headers['content-type'];
+    if (!contentType || !allowedContentType.test(contentType?.[0] ?? contentType)) {
+      logger?.info(`Not allowing content type ${contentType}`);
+      return false;
+    }
+    return true;
+  };
+}
 
 export function allowHtml(logger?: Logger) {
-  return function <Res extends Response>({ location, response }: { location: URL; response: Res }): boolean {
-    const contentType = response.headers['content-type'];
-    if (!contentType || !htmlContentType.test(contentType)) {
-      logger?.info(`Not allowing ${contentType}`);
-      return false;
-    }
-    return true;
-  };
+  return allowContentType(/text\/html;?.*/, logger);
 }
 
-export function allowHosts(allowedHosts: string[], logger?: Logger): UrlFilter {
-  return ({ location }): boolean => {
+export function allowHosts(allowedHosts: string[], logger?: Logger) {
+  return function allowHosts({ location }: WithURL): boolean {
     if (allowedHosts.indexOf(location.host) === -1) {
       logger?.info(`Host not allowed ${location.host}`);
       return false;
@@ -48,9 +56,9 @@ export function allowHosts(allowedHosts: string[], logger?: Logger): UrlFilter {
   };
 }
 
-export function allowProtocols(allowedProtocols: string[], logger?: Logger): UrlFilter {
+export function allowProtocols(allowedProtocols: string[], logger?: Logger) {
   const transformedProtocols = allowedProtocols.map((protocol) => `${protocol}:`);
-  return ({ location }): boolean => {
+  return function allowProtocols({ location }: WithURL): boolean {
     if (transformedProtocols.indexOf(location.protocol) === -1) {
       logger?.info(`Protocol not allowed ${location.protocol}`);
       return false;
