@@ -19,7 +19,7 @@ const createTypeScriptCrawler = () =>
     // Ignore .git, dist and node_module files
     requestFilter: pathIgnoreRegex([/\/\.git$/, /\/dist$/, /\/node_modules$/]),
     // Only yield paths with extension ".ts" that are files
-    // yieldFilter: (options) => entryIsFile(options) && allowTypeScript(options),
+    yieldFilter: (options) => entryIsFile(options) && allowTypeScript(options),
     // Ignore doubles
     followFilter: pathIgnoreDoubles(),
   });

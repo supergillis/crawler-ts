@@ -1,4 +1,4 @@
-export type ValueOrPromise<T> = T | Promise<T>;
+import { FlatMapFn, iter, of } from './iterators';
 
 export interface Logger {
   info: (...args: any[]) => void;
@@ -10,25 +10,20 @@ export interface RequesterOptions<L> {
   readonly location: L;
 }
 
-export interface RequesterResult<L, R> extends RequesterOptions<L> {
-  readonly response?: R;
-}
-
 export interface ParserOptions<L, R> extends RequesterOptions<L> {
   readonly response: R;
-}
-
-export interface ParserResult<L, R, P> extends ParserOptions<L, R> {
-  readonly parsed?: P;
 }
 
 export interface FollowerOptions<L, R, P> extends ParserOptions<L, R> {
   readonly parsed: P;
 }
 
-export type Requester<L, R> = (options: RequesterOptions<L>) => ValueOrPromise<RequesterResult<L, R>>;
-export type Parser<L, R, P> = (options: ParserOptions<L, R>) => ValueOrPromise<ParserResult<L, R, P>>;
-export type Follower<L, R, P> = (options: FollowerOptions<L, R, P>) => AsyncGenerator<L>;
+export type Requester<L, R> = FlatMapFn<RequesterOptions<L>, ParserOptions<L, R> | undefined>;
+export type Parser<L, R, P> = FlatMapFn<ParserOptions<L, R>, FollowerOptions<L, R, P> | undefined>;
+export type Yielder<L, R, P> = FlatMapFn<FollowerOptions<L, R, P> | undefined>;
+export type Follower<L, R, P> = FlatMapFn<FollowerOptions<L, R, P>, L | undefined>;
+
+export type Crawler<L, R, P> = (start: L) => AsyncIterableIterator<FollowerOptions<L, R, P>>;
 
 /**
  * @type {L} The type of the locations to crawl, e.g. `URL` or `string` that represents a path.
@@ -47,6 +42,10 @@ export interface CrawlerOptions<L, R, P> {
   /**
    * This function should yield all the locations to follow in the given parsed result.
    */
+  yielder?: Yielder<L, R, P>;
+  /**
+   * This function should yield all the locations to follow in the given parsed result.
+   */
   follower: Follower<L, R, P>;
   /**
    * The logger can be set to `console` to output debug information to the `console`.
@@ -56,36 +55,34 @@ export interface CrawlerOptions<L, R, P> {
   logger?: Logger;
 }
 
-export type Crawler<L, R, P> = (start: L) => AsyncGenerator<FollowerOptions<L, R, P>>;
+export const defaultYielder: Yielder<any, any, any> = (options) => options;
 
 export function createCrawler<L, R, P>(options: CrawlerOptions<L, R, P>): Crawler<L, R, P> {
-  const { requester, parser, follower, logger } = options;
+  const { requester, parser, yielder = defaultYielder, follower, logger } = options;
 
-  return async function* gen(location: L): AsyncGenerator<FollowerOptions<L, R, P>> {
+  return async function* gen(location: L): AsyncIterableIterator<FollowerOptions<L, R, P>> {
     try {
       logger?.debug(`Requesting ${location}`);
-      const requesterResult = await requester({ location });
-      if (!isParserOptions(requesterResult)) {
-        return;
-      }
 
-      logger?.debug(`Parsing ${location}`);
-      const parserResult = await parser(requesterResult);
-      if (!isFollowerOptions(parserResult)) {
-        return;
-      }
+      // prettier-ignore
+      const followerOptions = iter({ location })
+        .flatMap(requester)
+        .is(isDefined, () => logger?.debug(`Not allowing request for ${location}`))
+        .flatMap(parser)
+        .is(isDefined, () => logger?.debug(`Not allowing parsing for ${location}`));
 
-      logger?.debug(`Yielding ${location}`);
-      yield parserResult;
+      for await (const followerOption of followerOptions) {
+        // prettier-ignore
+        yield* iter(followerOption)
+          .flatMap(yielder)
+          .is(isDefined, () => logger?.debug(`Not allowing yield for ${location}`));
 
-      for await (const next of follower(parserResult)) {
-        try {
-          logger?.debug(`Queueing ${next}`);
-          yield* gen(next);
-        } catch (e) {
-          logger?.error(`Cannot queue ${next}`);
-          logger?.error(e);
-        }
+        // prettier-ignore
+        yield* iter(followerOption)
+          .flatMap(follower)
+          .is(isDefined, () => logger?.debug(`Not allowing follow for ${location}`))
+          .catch((e) => logger?.error(`Cannot queue ${location}`, e))
+          .flatMap(gen);
       }
     } catch (e) {
       logger?.error(`Cannot visit ${location}`);
@@ -94,10 +91,6 @@ export function createCrawler<L, R, P>(options: CrawlerOptions<L, R, P>): Crawle
   };
 }
 
-export function isParserOptions<L, R>(result: RequesterResult<L, R>): result is ParserOptions<L, R> {
-  return result.response !== undefined && result.response !== null;
-}
-
-export function isFollowerOptions<L, R, P>(result: ParserResult<L, R, P>): result is FollowerOptions<L, R, P> {
-  return result.parsed !== undefined && result.parsed !== null;
+export function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
 }

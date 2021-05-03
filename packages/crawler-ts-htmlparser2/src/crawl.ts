@@ -10,17 +10,16 @@ export type Parsed = Document;
 
 export type Requester = crawler.Requester<Location, Response>;
 export type RequesterOptions = crawler.RequesterOptions<Location>;
-export type RequesterResult = crawler.RequesterResult<Location, Response>;
 export type Parser = crawler.Parser<Location, Response, Parsed>;
 export type ParserOptions = crawler.ParserOptions<Location, Response>;
-export type ParserResult = crawler.ParserResult<Location, Response, Parsed>;
 export type Follower = crawler.Follower<Location, Response, Parsed>;
 export type FollowerOptions = crawler.FollowerOptions<Location, Response, Parsed>;
 
 export function createDefaultRequester(delayMilliseconds?: number) {
   const requester = crawlerFetch.createRequester(delayMilliseconds);
 
-  return async (options: RequesterOptions): Promise<RequesterResult> => {
+  return async (options: RequesterOptions): Promise<ParserOptions | undefined> => {
+    console.log();
     const response = await requester(options.location.href);
     return {
       ...options,
@@ -29,7 +28,7 @@ export function createDefaultRequester(delayMilliseconds?: number) {
   };
 }
 
-export async function defaultParser(options: ParserOptions): Promise<ParserResult> {
+export async function defaultParser(options: ParserOptions): Promise<FollowerOptions | undefined> {
   const body = await options.response.text();
   return {
     ...options,

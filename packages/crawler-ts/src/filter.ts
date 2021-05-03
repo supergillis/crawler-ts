@@ -1,13 +1,22 @@
 import * as crawler from './crawl';
+import { FilterFn, FlatMapFn, iter, ValueOrPromise } from './iterators';
 
-export type RequestFilter<L> = (result: crawler.RequesterOptions<L>) => crawler.ValueOrPromise<boolean>;
-export type ParseFilter<L, R, P> = (result: crawler.FollowerOptions<L, R, P>) => crawler.ValueOrPromise<boolean>;
-export type FollowFilter<L> = (result: { location: L }) => crawler.ValueOrPromise<boolean>;
+export type RequestFilter<L> = FilterFn<crawler.RequesterOptions<L>>;
+export type ParseFilter<L, R, P> = FilterFn<crawler.FollowerOptions<L, R, P>>;
+export type YieldFilter<L, R, P> = FilterFn<crawler.FollowerOptions<L, R, P>>;
+export type FollowFilter<L> = FilterFn<{ location: L }>;
 
 export interface FilteredCrawlerOptions<L, R, P> extends crawler.CrawlerOptions<L, R, P> {
   requestFilter?: RequestFilter<L>;
   parseFilter?: ParseFilter<L, R, P>;
+  yieldFilter?: YieldFilter<L, R, P>;
   followFilter?: FollowFilter<L>;
+}
+
+export function filterFlatMap<A, B>(fn: FlatMapFn<A, B | undefined>, filter: (value: B) => ValueOrPromise<boolean>) {
+  return async function* (a: A): AsyncIterableIterator<B> {
+    yield* iter(fn(a)).is(crawler.isDefined).filter(filter);
+  };
 }
 
 export function createFilteredOptions<L, R, P>(
@@ -18,6 +27,8 @@ export function createFilteredOptions<L, R, P>(
     requestFilter,
     parser: defaultParser,
     parseFilter,
+    yielder: defaultYielder,
+    yieldFilter,
     follower: defaultFollower,
     followFilter,
     logger,
@@ -25,45 +36,43 @@ export function createFilteredOptions<L, R, P>(
 
   let requester = defaultRequester;
   let parser = defaultParser;
+  let yielder = defaultYielder;
   let follower = defaultFollower;
 
   if (requestFilter) {
-    requester = async function filteredRequest(options) {
-      const result = await defaultRequester(options);
-      if (crawler.isParserOptions(result)) {
-        const filtered = await requestFilter(result);
-        if (filtered) {
-          return result;
-        }
-      }
-      logger?.debug(`Not allowing through request filter ${options.location}`);
-      return { ...result, response: undefined };
+    requester = async function* (value) {
+      // prettier-ignore
+      yield* iter(defaultRequester(value))
+        .is(crawler.isDefined)
+        .filter(requestFilter, (opts) => logger?.debug(`Not allowing request for ${opts?.location}`));
     };
   }
-
   if (parseFilter) {
-    parser = async function filteredParser(options) {
-      const result = await defaultParser(options);
-      if (crawler.isFollowerOptions(result)) {
-        const filtered = await parseFilter(result);
-        if (filtered) {
-          return result;
-        }
-      }
-      logger?.debug(`Not allowing through parse filter ${options.location}`);
-      return { ...result, parsed: undefined };
+    parser = async function* (value) {
+      // prettier-ignore
+      yield* iter(defaultParser(value))
+        .is(crawler.isDefined)
+        .filter(parseFilter, (opts) => logger?.debug(`Not allowing parsing for ${opts?.location}`));
     };
   }
 
   if (followFilter) {
-    follower = async function* filteredFollower(options) {
-      for await (const next of defaultFollower(options)) {
-        if (followFilter({ location: next })) {
-          yield next;
-        } else {
-          logger?.debug(`Not allowing through follow filter ${options.location}`);
-        }
-      }
+    follower = async function* (value) {
+      // prettier-ignore
+      yield* iter(defaultFollower(value))
+        .is(crawler.isDefined)
+        .map(location => ({ location }))
+        .filter(followFilter, (opts) => logger?.debug(`Not allowing filter for ${opts?.location}`))
+        .map(opts => opts.location);
+    };
+  }
+
+  if (yieldFilter) {
+    yielder = async function* (value) {
+      // prettier-ignore
+      yield* iter((defaultYielder ?? crawler.defaultYielder)(value))
+        .is(crawler.isDefined)
+        .filter(yieldFilter, (opts) => logger?.debug(`Not allowing yield for ${opts?.location}`))
     };
   }
 
@@ -71,82 +80,13 @@ export function createFilteredOptions<L, R, P>(
     ...options,
     requester,
     parser,
+    yielder,
     follower,
   };
 }
 
 export function createFilteredCrawler<L, R, P>(options: FilteredCrawlerOptions<L, R, P>): crawler.Crawler<L, R, P> {
-  const {
-    requester: defaultRequester,
-    requestFilter,
-    parser: defaultParser,
-    parseFilter,
-    follower: defaultFollower,
-    followFilter,
-    logger,
-  } = options;
-
-  let requester = defaultRequester;
-  let parser = defaultParser;
-  let follower = defaultFollower;
-
-  if (requestFilter) {
-    requester = async function filteredRequest(options) {
-      const result = await defaultRequester(options);
-      if (crawler.isParserOptions(result)) {
-        const filtered = await requestFilter(result);
-        if (filtered) {
-          return result;
-        }
-      }
-      logger?.debug(`Not allowing through request filter ${options.location}`);
-      return { ...result, response: undefined };
-    };
-  }
-
-  if (parseFilter) {
-    parser = async function filteredParser(options) {
-      const result = await defaultParser(options);
-      if (crawler.isFollowerOptions(result)) {
-        const filtered = await parseFilter(result);
-        if (filtered) {
-          return result;
-        }
-      }
-      logger?.debug(`Not allowing through parse filter ${options.location}`);
-      return { ...result, parsed: undefined };
-    };
-  }
-
-  if (followFilter) {
-    follower = async function* filteredFollower(options) {
-      for await (const next of defaultFollower(options)) {
-        if (followFilter({ location: next })) {
-          yield next;
-        } else {
-          logger?.debug(`Not allowing through follow filter ${options.location}`);
-        }
-      }
-    };
-  }
-
-  const createCrawler = crawler.createCrawler({
-    ...options,
-    requester,
-    parser,
-    follower,
-  });
-  // if (yieldFilter) {
-  //   return async function* (start: L) {
-  //     const gen = createCrawler(start);
-  //     for await (const value of gen) {
-  //       if (yieldFilter(value)) {
-  //         yield value;
-  //       }
-  //     }
-  //   };
-  // }
-  return createCrawler;
+  return crawler.createCrawler(createFilteredOptions(options));
 }
 
 export type WithLocation<L> = { location: L };

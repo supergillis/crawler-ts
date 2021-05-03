@@ -7,22 +7,20 @@ export type Response = fs.Stats;
 export type Parsed = fs.Stats;
 
 export type RequesterOptions = crawler.RequesterOptions<Location>;
-export type RequesterResult = crawler.RequesterResult<Location, Response>;
 export type ParserOptions = crawler.ParserOptions<Location, Response>;
-export type ParserResult = crawler.ParserResult<Location, Response, Parsed>;
 export type FollowerOptions = crawler.FollowerOptions<Location, Response, Parsed>;
 
 /**
  * Requester that requests file system stats for the path.
  */
-export async function defaultRequester(options: RequesterOptions): Promise<RequesterResult> {
+export function defaultRequester(options: RequesterOptions): ParserOptions | undefined {
   return {
     ...options,
     response: fs.statSync(options.location),
   };
 }
 
-export async function defaultParser(options: ParserOptions): Promise<ParserResult> {
+export function defaultParser(options: ParserOptions): FollowerOptions | undefined {
   return {
     ...options,
     parsed: options.response,
@@ -57,6 +55,6 @@ export function createCrawler(options: Options): crawler.Crawler<Location, Respo
     ...options,
     requester: defaultRequester,
     parser: defaultParser,
-    follower: createDefaultFollower(),
+    follower: createDefaultFollower(options.logger),
   });
 }
